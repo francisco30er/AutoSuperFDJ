@@ -1,0 +1,17 @@
+procesar argumentos 
+tener simulado el pc  
+codificar instrucciones
+add
+addi 
+jr 
+
+
+
+git config --global user.name "francisco30er"
+git config --global user.email	"francisco30er@gmail.com"
+git init 
+git remote add origin http://github.com/username/nombrerepertorio.git
+git add .
+git commit -m 'descripcion'
+git push origin master 
+
