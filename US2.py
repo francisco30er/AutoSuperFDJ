@@ -4,7 +4,6 @@ GPIO.setmode(GPIO.BCM)
 #redespass
 from ubidots import ApiClient
 import math
-import time
 
 api = ApiClient(token="972FUfeyLTXqbUKXlaLNgJ9jEHeuKl")
 variable = api.get_variable("59274e40762542294766e523")
