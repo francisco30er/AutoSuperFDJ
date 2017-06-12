@@ -1,4 +1,5 @@
 #ftppython
+#ftp>ls
 from ftplib import FTP
 
 #domain name or server ip:
