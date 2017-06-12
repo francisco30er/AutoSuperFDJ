@@ -8,6 +8,7 @@ import sys
 import RPi.GPIO as GPIO
 import Adafruit_PN532 as PN532
 from subprocess import call
+from ftplib import FTP
 
 
 ####################PINES_RASPBERRY###########################
@@ -94,7 +95,30 @@ while True:
 			print(data[1:15])
 			func_nfc()
 			if (data[1:15]==ip): 
+
 				print("adksda")
+				#domain name or server ip:
+				#datosnfc=data[1:15]
+				#pancho=datosnfc.split()
+				ftp = FTP(str(data[1:15]))
+				
+				ftp.login(user='redesie1', passwd = 'redesie2017')
+
+				#ftp.cwd('/folder1/')
+
+				#Subir archivo
+				filename = 'exampleFile1.txt'
+				ftp.storbinary('STOR '+filename, open(filename, 'rb'))
+				#ftp.quit()
+
+				#Bajar Archivo
+				filename = 'archivo.txt'
+
+				localfile = open(filename, 'wb')
+				ftp.retrbinary('RETR ' + filename, localfile.write, 1024)
+
+				ftp.quit()
+				localfile.close()
 	
 		
             
