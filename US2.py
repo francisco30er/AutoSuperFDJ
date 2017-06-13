@@ -6,7 +6,7 @@ from ubidots import ApiClient
 import math
 
 api = ApiClient(token="972FUfeyLTXqbUKXlaLNgJ9jEHeuKl")
-variable = api.get_variable("59274e40762542294766e523")
+variable = api.get_variable("593ec67876254251716133ab")
 
 
 TRIG = 23  #PIN 16
@@ -39,6 +39,8 @@ distance = pulse_duration * 17150
 
 distance = round(distance, 2)
 
+metros = 14.5 - distance 
+
 print "Distance:",distance,"cm"
 
 if ( distance > 5) : print "Nivel 1!"
@@ -55,7 +57,7 @@ if ( distance > 26) : print "Nivel 5!"
 GPIO.cleanup()
 
 # Write the value to your variable in Ubidots
-response = variable.save_value({"value": distance})
+response = variable.save_value({"value": metros})
 print response
 time.sleep(1)
 
