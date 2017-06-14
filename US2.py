@@ -6,8 +6,13 @@ from ubidots import ApiClient
 import math
 
 api = ApiClient(token="972FUfeyLTXqbUKXlaLNgJ9jEHeuKl")
+<<<<<<< HEAD
 #variable = api.get_variable("59274e40762542294766e523")
 variable1 = api.get_variable("593ec67876254251716133ab")
+=======
+variable = api.get_variable("593ec67876254251716133ab")
+
+>>>>>>> b4da794d99f4738376ecd76dc118397ff3f02dee
 
 TRIG = 23  #PIN 16
 ECHO = 24  #PIN 18
@@ -39,6 +44,8 @@ distance = pulse_duration * 17150
 
 distance = round(distance, 2)
 
+metros = 14.5 - distance 
+
 print "Distance:",distance,"cm"
 
 metros = 14.89-distance
@@ -62,10 +69,14 @@ if ( metros >= 12) : print "Tanque lleno!"
 GPIO.cleanup()
 
 # Write the value to your variable in Ubidots
+<<<<<<< HEAD
 #response = variable.save_value({"value": distance})
 #print response
 #time.sleep(1)
 
 response = variable1.save_value({"value": metros})
+=======
+response = variable.save_value({"value": metros})
+>>>>>>> b4da794d99f4738376ecd76dc118397ff3f02dee
 print response
 time.sleep(1)
