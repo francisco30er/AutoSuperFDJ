@@ -6,8 +6,8 @@ from ubidots import ApiClient
 import math
 
 api = ApiClient(token="972FUfeyLTXqbUKXlaLNgJ9jEHeuKl")
-variable = api.get_variable("59274e40762542294766e523")
-
+#variable = api.get_variable("59274e40762542294766e523")
+variable1 = api.get_variable("593ec67876254251716133ab")
 
 TRIG = 23  #PIN 16
 ECHO = 24  #PIN 18
@@ -41,21 +41,31 @@ distance = round(distance, 2)
 
 print "Distance:",distance,"cm"
 
-if ( distance > 5) : print "Nivel 1!"
+metros = 14.89-distance
 
-if ( distance > 10) : print "Nivel 2!"
+print "Hay",metros,"m3"
 
-if ( distance > 15) : print "Nivel 3!"
+print "------------------------------------------------------"
+print "------------------------------------------------------"
+print "------------------------------------------------------"
+
+if ( metros < 3) : print "Tanque vacio!"
 
 
-if ( distance > 20) : print "Nivel 4!"
+#if ( metros >= 6  and metros <9 ) : print "Tanque a un cuarto!"
 
-if ( distance > 26) : print "Nivel 5!"
+
+#if ( metros >= 9) : print "Tanque a tres cuartos!"
+
+if ( metros >= 12) : print "Tanque lleno!"
 
 GPIO.cleanup()
 
 # Write the value to your variable in Ubidots
-response = variable.save_value({"value": distance})
+#response = variable.save_value({"value": distance})
+#print response
+#time.sleep(1)
+
+response = variable1.save_value({"value": metros})
 print response
 time.sleep(1)
-

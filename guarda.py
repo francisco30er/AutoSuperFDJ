@@ -1,4 +1,4 @@
 import os
 import sys
 
-os.system("python hora.py >> archivo.txt")
+os.system("python hora.py >> hora.txt")
