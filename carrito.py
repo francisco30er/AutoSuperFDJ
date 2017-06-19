@@ -46,15 +46,24 @@ sensor = SI1145.SI1145()
 #VARIABLES PARA LAS ESTACIONES:
 v = "verde"
 r = "rojo"
-a = "azul"
+a = "amarillo"
 
 
 ###############FUNCION_PARA_LEER_TAGS##########################
 def func_nfc():
-	global data, DELAY
+	global data, DELAY, leds
 	perro=True
 	while (perro):
-		
+		if(leds==0): 
+			
+			GPIO.output(16, GPIO.HIGH)
+			GPIO.output(26, GPIO.HIGH)
+			GPIO.output(12, GPIO.HIGH)
+			time.sleep(0.1)
+			GPIO.output(16, GPIO.LOW)
+			GPIO.output(26, GPIO.LOW)
+			GPIO.output(12, GPIO.LOW)
+		#time.sleep(0.5)
 	    	# Configure the key to use for writing to the MiFare card.  You probably don't
 		# need to change this from the default below unless you know your card has a
 		# different key associated with it.
@@ -76,7 +85,7 @@ def func_nfc():
 		if uid is None:
 			continue
 		# Found a card, now try to read block 4 to detect the block type
-		print('')
+		#print('')
 		print('Card UID 0x{0}'.format(binascii.hexlify(uid)))
 		#Authenticate and read block 4
 		#if not pn532.mifare_classic_authenticate_block(uid, 1, PN532.MIFARE_CMD_AUTH_A,
@@ -94,20 +103,20 @@ def func_nfc():
 
 
 while True:
-    	GPIO.output(16, GPIO.LOW)
-	GPIO.output(26, GPIO.LOW)
-	GPIO.output(12, GPIO.LOW)
-
+	leds=0
 	func_nfc()	#leer tag
     
 ##verde#################PRUEBA_01###########################################
 	if(data[1:6] == v): 
 		print(data[1:6])
+		leds=1
+		GPIO.output(26, GPIO.LOW)
+		GPIO.output(12, GPIO.LOW)
 		GPIO.output(16, GPIO.HIGH)
 		leer_ip=True
 		while (leer_ip):
 			print("leyendo_ip")
-			print(data[1:15])
+			print(data[2:16])
 			func_nfc()
 			#if (data[1:15]==ip): 
 			print("adksda")
@@ -117,7 +126,7 @@ while True:
 			
 			try:
 				os.system("python hora.py >> hora.txt")
-				ftp = FTP(str(data[1:15]))
+				ftp = FTP(str(data[2:16]))
 				ftp.login(user='redesie1', passwd = 'redesie2017')
 				#Subir archivo
 				filename = 'hora.txt'
@@ -139,10 +148,12 @@ while True:
 
 ##amarillo##################PRUEBA_02###########################################
 
-	elif(data[1:5] == r):
+	elif(data[1:9] == a):
 		try:
-			print(data[1:5])
-			GPIO.output(26, GPIO.HIGH)
+			print(data[1:9])
+			GPIO.output(26, GPIO.LOW)
+			GPIO.output(16, GPIO.LOW)
+			GPIO.output(12, GPIO.HIGH)
 			global Temperatura, Humedad
 			###########TEMP_HUM#############
 			if result.is_valid():
@@ -188,53 +199,60 @@ while True:
 			
 
 
-##rojo##################PRUEBA_03###########################################
+##amarillo##################PRUEBA_03###########################################
 	
-	elif(data[1:5] == a):
+	elif(data[1:5] == r):
 		print(data[1:5])
-		GPIO.output(12, GPIO.HIGH)
+		GPIO.output(12, GPIO.LOW)
+		GPIO.output(16, GPIO.LOW)
+		GPIO.output(26, GPIO.HIGH)
 		
 		pancho=True
 		while (pancho):
-			###########TEMP_HUM#############
-			if result.is_valid():
-				Temperatura=result.temperature
-				Humedad=result.humidity
-				print("Temperatura: %d C" % Temperatura)			
-				print("Humedad: %d %%" % Humedad)
-			else:
-				print("Error: %d" % result.error_code)
+			try:
+				###########TEMP_HUM#############
+				if result.is_valid():
+					Temperatura=result.temperature
+					Humedad=result.humidity
+					print("Temperatura: %d C" % Temperatura)			
+					print("Humedad: %d %%" % Humedad)
+				else:
+					print("Error: %d" % result.error_code)
 
 			
 
-			###################XBEE######################################
-			ser = serial.Serial(
-				      
-				port='/dev/ttyUSB0',
-				baudrate = 9600,
-				parity=serial.PARITY_NONE,
-				stopbits=serial.STOPBITS_ONE,
-				bytesize=serial.EIGHTBITS,
-				timeout=1
-				   )
-			counter=0
+				###################XBEE######################################
+				ser = serial.Serial(
+					      
+					port='/dev/ttyUSB0',
+					baudrate = 9600,
+					parity=serial.PARITY_NONE,
+					stopbits=serial.STOPBITS_ONE,
+					bytesize=serial.EIGHTBITS,
+					timeout=1
+					   )
+				counter=0
 
-			########LEER/ESCRIBIR_SERIAL#########
-			x=ser.readline()
-			print (x)
-			y=ser.write(str(Temperatura))
-			y=ser.write('/')
-			y=ser.write(str(Humedad))
-			y=ser.write(';')
-			if (x=='OK'):
-				pancho=False
-			else:
-				pancho=True
+				########LEER/ESCRIBIR_SERIAL#########
+				x=ser.readline()
+				print (x)
+				y=ser.write(str(Temperatura))
+				y=ser.write('/')
+				y=ser.write(str(Humedad))
+				y=ser.write(';')
+				if (x=='OK'):
+					pancho=False
+				else:
+					pancho=True
+			
+			except socket.error,e: 	
+				print ("C mamo")
 		
 
 ##################ELSE_POR_ALGUN_ERROR######################################
 	else:
 		print("NADA...")
+		print(data[1:9])
 		time.sleep(DELAY)
 
 
