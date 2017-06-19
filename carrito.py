@@ -1,20 +1,34 @@
-# Requires Adafruit_Python_PN532
+###########################################################################
+#Proyecto de Redes de Computadoras					             Profesor: Ing. Rogelio Gonzales Quiros#					
+###########################################################################
+#Realizado por: 			Jose Rosales C.             	 Francisco Elizondo R.	         Daniel Quesada V.#
+###########################################################################
+#Estudiantes de la carrera de Ing. Electronica del TEC, sede San Carlos                                                             #
+###########################################################################
+
 
 import binascii
 import socket
 import time
 import signal
 import sys
+import serial
 import RPi.GPIO as GPIO
-import Adafruit_PN532 as PN532
+import Adafruit_PN532 as PN532	#libreria lector NFC
 from subprocess import call
-from ftplib import FTP
+from ftplib import FTP				#libreria FTP
+import dht11						#libreria Sensor humedad y temperatura
+import SI1145.SI1145 as SI1145	#Sensor UV 
+from ubidots import ApiClient		#Ubidots...
+import math
+import os
 
 
 ####################PINES_RASPBERRY###########################
 GPIO.setmode(GPIO.BCM)
 # PN532 configuration for a Raspberry Pi GPIO:
 GPIO.setwarnings(False)  #desacttiva Warnings
+GPIO.cleanup()
 CS   = 18               			 #GPIO 18, pin 12
 MOSI = 23               		 #GPIO 23, pin 16
 MISO = 24                		 #GPIO 24, pin 18
@@ -22,28 +36,25 @@ SCLK = 25                		 #GPIO 25, pin 22
 GPIO.setup(16, GPIO.OUT)   #verde pin 36
 GPIO.setup(12, GPIO.OUT)   #azul  pin 32
 GPIO.setup(26, GPIO.OUT)   #rojo
-###############################################################
-
-
-
+#################Sensor de humedad y temp#########################
+instance = dht11.DHT11(pin=14)
+result = instance.read()
+#################Sensor UV#####################################
+sensor = SI1145.SI1145()
 
 ####################VARIABLES_GLOBALES#########################
-
 #VARIABLES PARA LAS ESTACIONES:
 v = "verde"
 r = "rojo"
 a = "azul"
-ip= "54.237.192.107"
 
 
-
-
-
-###############FUNCION_PARA_LEER_TAGS###########################
+###############FUNCION_PARA_LEER_TAGS##########################
 def func_nfc():
 	global data, DELAY
 	perro=True
 	while (perro):
+		
 	    	# Configure the key to use for writing to the MiFare card.  You probably don't
 		# need to change this from the default below unless you know your card has a
 		# different key associated with it.
@@ -69,7 +80,7 @@ def func_nfc():
 		print('Card UID 0x{0}'.format(binascii.hexlify(uid)))
 		#Authenticate and read block 4
 		#if not pn532.mifare_classic_authenticate_block(uid, 1, PN532.MIFARE_CMD_AUTH_A,
-				                #CARD_KEY):
+					        #CARD_KEY):
 		#print('Failed to authenticate with card!')
 		#continue
 		data = pn532.mifare_classic_read_block(6)
@@ -77,13 +88,17 @@ def func_nfc():
 			print('Failed to read data from card!')
 			continue
 		perro=False
+		
 ##########################################################################
 
 
 
 while True:
-    
-	func_nfc()
+    	GPIO.output(16, GPIO.LOW)
+	GPIO.output(26, GPIO.LOW)
+	GPIO.output(12, GPIO.LOW)
+
+	func_nfc()	#leer tag
     
 ##verde#################PRUEBA_01###########################################
 	if(data[1:6] == v): 
@@ -94,69 +109,132 @@ while True:
 			print("leyendo_ip")
 			print(data[1:15])
 			func_nfc()
-			if (data[1:15]==ip): 
-
-				print("adksda")
-				#domain name or server ip:
-				#datosnfc=data[1:15]
-				#pancho=datosnfc.split()
+			#if (data[1:15]==ip): 
+			print("adksda")
+			#domain name or server ip:69
+			#datosnfc=data[1:15]
+			#pancho=datosnfc.split()
+			
+			try:
+				os.system("python hora.py >> hora.txt")
 				ftp = FTP(str(data[1:15]))
-				
 				ftp.login(user='redesie1', passwd = 'redesie2017')
-
-				#ftp.cwd('/folder1/')
-
 				#Subir archivo
-				filename = 'exampleFile1.txt'
+				filename = 'hora.txt'
 				ftp.storbinary('STOR '+filename, open(filename, 'rb'))
 				#ftp.quit()
-
 				#Bajar Archivo
 				filename = 'archivo.txt'
-
 				localfile = open(filename, 'wb')
 				ftp.retrbinary('RETR ' + filename, localfile.write, 1024)
-
+				print("archivo correctamente descargado")
 				ftp.quit()
 				localfile.close()
-	
+				os.remove("hora.txt")
+				leer_ip=False										#para salirse del while
+			except socket.error,e: 
+					print ' No se pudo conectar!, %s'%e
+					os.remove("hora.txt")
 		
-            
 
+##amarillo##################PRUEBA_02###########################################
 
-
-
-
-
-
-##rojo##################PRUEBA_02###########################################
 	elif(data[1:5] == r):
-		print(data[1:5])
-		GPIO.output(26, GPIO.HIGH)
-		
+		try:
+			print(data[1:5])
+			GPIO.output(26, GPIO.HIGH)
+			global Temperatura, Humedad
+			###########TEMP_HUM#############
+			if result.is_valid():
+				Temperatura=result.temperature
+				Humedad=result.humidity
+				print("Temperatura: %d C" % Temperatura)			
+				print("Humedad: %d %%" % Humedad)
+			else:
+				print("Error: %d" % result.error_code)
+
+			#############UV:################
+			vis = sensor.readVisible()
+	       		IR = sensor.readIR()
+	       		UV = sensor.readUV()
+	       		uvIndex = UV / 100.0
+			#print ('Vis:             ' + str(vis))
+	      	  	#print ('IR:              ' + str(IR))
+			#print ('UV Index:        ' + str(uvIndex))
+
+			#################UBIDOTS#############################################
+			api = ApiClient(token="972FUfeyLTXqbUKXlaLNgJ9jEHeuKl")	#Api Client
+			#variables:
+			var_temp = api.get_variable("59420f727625421a07edcc58")
+			var_hum = api.get_variable("59420f847625421a133a5303")
+			var_uv = api.get_variable("59421dad7625421a0f8d7381")
+			var_ir = api.get_variable("59421d9e7625421a0f8d7276")
+			var_vis = api.get_variable("59421d937625421a04983b40")
+
+			# Escribe el valor a las variables de UBIDOTS:
+	 		resp_temp = var_temp.save_value({"value": Temperatura})
+	  		print resp_temp
+			resp_hum = var_hum.save_value({"value": Humedad})
+	  		print resp_hum
+			resp_uv = var_uv.save_value({"value": str(uvIndex)})
+	  		print resp_uv
+			resp_ir = var_ir.save_value({"value": str(IR)})
+	  		print resp_ir
+			resp_vis = var_vis.save_value({"value": str(vis)})
+	  		print resp_vis
+
+		except socket.error,e: 
+					print ' Algun error, %s'%e
+			
 
 
-
-
-
-
-
-
-##azul##################PRUEBA_02###########################################
+##rojo##################PRUEBA_03###########################################
+	
 	elif(data[1:5] == a):
 		print(data[1:5])
 		GPIO.output(12, GPIO.HIGH)
 		
+		pancho=True
+		while (pancho):
+			###########TEMP_HUM#############
+			if result.is_valid():
+				Temperatura=result.temperature
+				Humedad=result.humidity
+				print("Temperatura: %d C" % Temperatura)			
+				print("Humedad: %d %%" % Humedad)
+			else:
+				print("Error: %d" % result.error_code)
 
+			
 
+			###################XBEE######################################
+			ser = serial.Serial(
+				      
+				port='/dev/ttyUSB0',
+				baudrate = 9600,
+				parity=serial.PARITY_NONE,
+				stopbits=serial.STOPBITS_ONE,
+				bytesize=serial.EIGHTBITS,
+				timeout=1
+				   )
+			counter=0
 
-
-
-
+			########LEER/ESCRIBIR_SERIAL#########
+			x=ser.readline()
+			print (x)
+			y=ser.write(str(Temperatura))
+			y=ser.write('/')
+			y=ser.write(str(Humedad))
+			y=ser.write(';')
+			if (x=='OK'):
+				pancho=False
+			else:
+				pancho=True
+		
 
 ##################ELSE_POR_ALGUN_ERROR######################################
 	else:
-		print("NADADADA")
+		print("NADA...")
 		time.sleep(DELAY)
 
 
