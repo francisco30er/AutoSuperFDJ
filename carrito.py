@@ -47,7 +47,7 @@ sensor = SI1145.SI1145()
 v = "verde"
 r = "rojo"
 a = "amarillo"
-
+f = "FIN"
 
 ###############FUNCION_PARA_LEER_TAGS##########################
 def func_nfc():
@@ -248,6 +248,30 @@ while True:
 			except socket.error,e: 	
 				print ("C mamo")
 		
+
+##fin##################PRUEBA_FIN###########################################
+	
+	elif(data[1:4] == f):
+		print(data[1:4])
+		while True:
+				
+			GPIO.output(16, GPIO.HIGH)
+			GPIO.output(12, GPIO.LOW)
+			GPIO.output(26, GPIO.LOW)
+			time.sleep(0.1)
+			GPIO.output(16, GPIO.LOW)
+			GPIO.output(12, GPIO.HIGH)
+			GPIO.output(26, GPIO.LOW)
+			time.sleep(0.1)	
+			GPIO.output(16, GPIO.LOW)
+			GPIO.output(12, GPIO.LOW)
+			GPIO.output(26, GPIO.HIGH)
+			time.sleep(0.1)
+			GPIO.output(16, GPIO.LOW)
+			GPIO.output(12, GPIO.HIGH)
+			GPIO.output(26, GPIO.LOW)
+			time.sleep(0.1)
+			
 
 ##################ELSE_POR_ALGUN_ERROR######################################
 	else:
